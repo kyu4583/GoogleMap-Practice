@@ -3,6 +3,8 @@ package com.example.GoogleMapPractice.domain.TmapRoutes;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public class RouteCalculator {
     public static void main(String[] args) throws JsonProcessingException {
@@ -713,7 +715,7 @@ public class RouteCalculator {
                 "            }\n" +
                 "        }\n" +
                 "    ]\n" +
-                "}";  // 여기에 GeoJSON 데이터를 넣으세요.
+                "}"; // 여기에 GeoJSON 데이터를 넣으세요.
 
         ObjectMapper mapper = new ObjectMapper();
         JsonNode rootNode = mapper.readTree(json);
@@ -721,6 +723,10 @@ public class RouteCalculator {
         JsonNode features = rootNode.path("features");
         double totalDistance = 0;
         int totalTime = 0;
+
+        // 결과를 저장할 JSON 객체 생성
+        ObjectNode result = mapper.createObjectNode();
+        ArrayNode coordinatesArray = mapper.createArrayNode();
 
         for (JsonNode feature : features) {
             JsonNode geometry = feature.path("geometry");
@@ -730,19 +736,25 @@ public class RouteCalculator {
             if (geometry.path("type").asText().equals("Point")) {
                 double latitude = coordinates.get(1).asDouble();
                 double longitude = coordinates.get(0).asDouble();
-                System.out.println("위도: " + latitude + ", 경도: " + longitude);
+                coordinatesArray.add(mapper.createObjectNode().put("latitude", latitude).put("longitude", longitude));
             } else if (geometry.path("type").asText().equals("LineString")) {
                 for (JsonNode coordinate : coordinates) {
                     double latitude = coordinate.get(1).asDouble();
                     double longitude = coordinate.get(0).asDouble();
-                    System.out.println("위도: " + latitude + ", 경도: " + longitude);
+                    coordinatesArray.add(mapper.createObjectNode().put("latitude", latitude).put("longitude", longitude));
                 }
                 totalDistance += properties.path("distance").asDouble();
                 totalTime += properties.path("time").asInt();
             }
         }
 
-        System.out.println("총 소요 시간: " + totalTime + "초");
-        System.out.println("총 이동 거리: " + totalDistance + "미터");
+        // 결과 JSON에 데이터 추가
+        result.set("coordinates", coordinatesArray);
+        result.put("totalTimeSeconds", totalTime);
+        result.put("totalDistanceMeters", totalDistance);
+
+        // 결과 JSON을 문자열로 출력
+        String resultJson = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(result);
+        System.out.println(resultJson);
     }
 }
