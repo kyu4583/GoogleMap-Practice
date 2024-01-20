@@ -2,6 +2,8 @@ package com.example.GoogleMapPractice.domain.GoogleMapRoutes;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.io.IOException;
 
@@ -475,21 +477,25 @@ public class RouteCalculator {
         double totalDistance = 0;
         int totalTime = 0;
 
+        // 결과를 저장할 JSON 객체 생성
+        ObjectNode result = mapper.createObjectNode();
+        ArrayNode coordinates = mapper.createArrayNode();
+
         for (JsonNode route : routes) {
             JsonNode legs = route.path("legs");
             for (JsonNode leg : legs) {
                 JsonNode steps = leg.path("steps");
                 for (JsonNode step : steps) {
-                    // 각 단계의 시작점과 끝점의 좌표 추출
+                    // 각 단계의 시작점과 끝점의 좌표 추출 및 저장
                     JsonNode startLocation = step.path("startLocation").path("latLng");
                     double startLatitude = startLocation.path("latitude").asDouble();
                     double startLongitude = startLocation.path("longitude").asDouble();
-                    System.out.println("위도: " + startLatitude + ", 경도: " + startLongitude);
+                    coordinates.add(mapper.createObjectNode().put("latitude", startLatitude).put("longitude", startLongitude));
 
                     JsonNode endLocation = step.path("endLocation").path("latLng");
                     double endLatitude = endLocation.path("latitude").asDouble();
                     double endLongitude = endLocation.path("longitude").asDouble();
-                    System.out.println("위도: " + endLatitude + ", 경도: " + endLongitude);
+                    coordinates.add(mapper.createObjectNode().put("latitude", endLatitude).put("longitude", endLongitude));
 
                     // 거리 추출
                     totalDistance += step.path("distanceMeters").asDouble();
@@ -501,7 +507,13 @@ public class RouteCalculator {
             }
         }
 
-        System.out.println("총 소요 시간: " + totalTime + "초");
-        System.out.println("총 이동 거리: " + totalDistance + "미터");
+        // 결과 JSON에 데이터 추가
+        result.set("coordinates", coordinates);
+        result.put("totalTimeSeconds", totalTime);
+        result.put("totalDistanceMeters", totalDistance);
+
+        // 결과 JSON을 문자열로 출력
+        String resultJson = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(result);
+        System.out.println(resultJson);
     }
 }
