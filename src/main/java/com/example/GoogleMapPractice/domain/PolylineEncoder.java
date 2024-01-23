@@ -202,15 +202,6 @@ public class PolylineEncoder {
         }
         result.append(Character.toChars((int) (v + 63)));
     }
-    public static class LatLng {
-        double latitude;
-        double longitude;
-
-        public LatLng(double latitude, double longitude) {
-            this.latitude = latitude;
-            this.longitude = longitude;
-        }
-    }
 
     public static List<LatLng> parseJsonToLatLngList(String json) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
