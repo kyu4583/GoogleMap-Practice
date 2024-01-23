@@ -18,16 +18,24 @@ public class InternationalRoutesService implements RoutesService {
     }
     @Override
     public Mono<String> computeRoutes(RouteRequestDto routeRequestDto) {
+
+        String requestBody = buildRequestBody(routeRequestDto);
+
+        return postAPIRequest(requestBody);
+
+    }
+
+    private String buildRequestBody(RouteRequestDto routeRequestDto) {
         JSONObject json = routeRequestDto.toEntity().toGoogleJson();
         json.put("travelMode", "WALK");
         json.put("routingPreference", "ROUTING_PREFERENCE_UNSPECIFIED");
         json.put("computeAlternativeRoutes", false);
         json.put("languageCode", "en-US");
         json.put("units", "METRIC");
+        return json.toString();
+    }
 
-
-        String requestBody = json.toString();
-
+    private Mono<String> postAPIRequest(String requestBody) {
         return webClient.post()
                 .uri("/directions/v2:computeRoutes")
                 .header("Content-Type", "application/json")
